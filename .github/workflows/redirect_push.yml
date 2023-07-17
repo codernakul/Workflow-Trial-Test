@@ -1,0 +1,31 @@
+name: Redirect Pushes to Personal Branches
+
+on:
+  push:
+    branches:
+      - main
+jobs:
+  redirect_push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v2
+      
+    - name: Determine branch name
+      id: branch_name
+      run: echo "BRANCH_NAME=$(echo ${GITHUB_ACTOR} | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]' | cut -c 1-30)" >> $GITHUB_ENV
+      
+    - name: Create or update branch
+      run: |
+        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+        git config --global user.name "${GITHUB_ACTOR}"
+        git checkout -B $BRANCH_NAME
+        git add .
+        git commit -m "Update from ${GITHUB_ACTOR}"
+        git push origin $BRANCH_NAME
+        
+    - name: Set default branch
+      run: |
+        git symbolic-ref refs/remotes/origin/HEAD refs/heads/$BRANCH_NAME
+        git push origin HEAD:refs/heads/main
